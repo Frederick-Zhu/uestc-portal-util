@@ -7,6 +7,8 @@ from portal_tools import errors
 
 
 class IdasSession(requests.Session):
+    _timeout = 10
+
     def __init__(self, username, password):
         super(IdasSession, self).__init__()
 
@@ -47,3 +49,23 @@ class IdasSession(requests.Session):
 
     def __del__(self):
         self.get('http://idas.uestc.edu.cn/authserver/logout')
+
+    def request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
+                timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
+                json=None):
+
+        return super(IdasSession, self).request(method=method, url=url, params=params, data=data, headers=headers,
+                                                cookies=cookies, files=files, auth=auth,
+                                                timeout=timeout or IdasSession._timeout,
+                                                allow_redirects=allow_redirects, proxies=proxies, hooks=hooks,
+                                                stream=stream, verify=verify, cert=cert, json=json)
+
+    def get(self, url, **kwargs):
+        ret = super(IdasSession, self).get(url, **kwargs)
+        ret.raise_for_status()
+        return ret
+
+    def post(self, url, data=None, json=None, **kwargs):
+        ret = super(IdasSession, self).post(url=url, data=data, json=json, **kwargs)
+        ret.raise_for_status()
+        return ret
