@@ -1,16 +1,21 @@
 # -*- coding:utf-8 -*-
+import types
 
 import bs4
-import requests
+import requests.adapters
 
 from portal_tools import errors
 
 
 class IdasSession(requests.Session):
     _timeout = 10
+    _max_retries = 10
 
     def __init__(self, username, password):
         super(IdasSession, self).__init__()
+
+        self.mount('http://', requests.adapters.HTTPAdapter(max_retries=IdasSession._max_retries))
+        self.mount('https://', requests.adapters.HTTPAdapter(max_retries=IdasSession._max_retries))
 
         # 判断是否需要输入验证码
         get_need_captcha = self.get('http://idas.uestc.edu.cn/authserver/needCaptcha.html',
@@ -53,6 +58,12 @@ class IdasSession(requests.Session):
     def request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
                 timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
                 json=None):
+
+        if isinstance(headers, types.NoneType):
+            headers = dict()
+
+        headers['User-Agen'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55' \
+                               '.0.2883.87 Safari/537.36'
 
         return super(IdasSession, self).request(method=method, url=url, params=params, data=data, headers=headers,
                                                 cookies=cookies, files=files, auth=auth,
