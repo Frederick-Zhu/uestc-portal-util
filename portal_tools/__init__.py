@@ -2,20 +2,25 @@
 import types
 
 import bs4
-import requests.adapters
+from requests import Session
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 from portal_tools import errors
 
 
-class IdasSession(requests.Session):
+class IdasSession(Session):
     _timeout = 10
     _max_retries = 10
 
     def __init__(self, username, password):
         super(IdasSession, self).__init__()
 
-        self.mount('http://', requests.adapters.HTTPAdapter(max_retries=IdasSession._max_retries))
-        self.mount('https://', requests.adapters.HTTPAdapter(max_retries=IdasSession._max_retries))
+        _retry = Retry(IdasSession._max_retries, status_forcelist=[500, ], backoff_factor=0.2)
+        _http_adapter = HTTPAdapter(max_retries=_retry)
+
+        self.mount('http://', _http_adapter)
+        self.mount('https://', _http_adapter)
 
         # 判断是否需要输入验证码
         get_need_captcha = self.get('http://idas.uestc.edu.cn/authserver/needCaptcha.html',
