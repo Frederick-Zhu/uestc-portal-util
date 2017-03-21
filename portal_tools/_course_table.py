@@ -9,8 +9,13 @@ _idsPattern = ur'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\
               ur'lse{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
 
 
-def getCourseTable(username, password, semester_id=123):
-    session = portal_tools.IdasSession(username, password)
+def getCourseTable(semester_id=123, **kwargs):
+    if kwargs.has_key('session'):
+        session = kwargs['session']
+    elif kwargs.has_key('username') and kwargs.has_key('password'):
+        session = portal_tools.IdasSession(kwargs['username'], kwargs['password'])
+    else:
+        raise ValueError
 
     get_course_table_for_std = session.get('http://eams.uestc.edu.cn/eams/courseTableForStd.action')
 
