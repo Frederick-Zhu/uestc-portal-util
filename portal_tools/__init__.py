@@ -67,8 +67,8 @@ class IdasSession(Session):
         if isinstance(headers, types.NoneType):
             headers = dict()
 
-        headers['User-Agen'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55' \
-                               '.0.2883.87 Safari/537.36'
+        headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55' \
+                                '.0.2883.87 Safari/537.36'
 
         return super(IdasSession, self).request(method=method, url=url, params=params, data=data, headers=headers,
                                                 cookies=cookies, files=files, auth=auth,
