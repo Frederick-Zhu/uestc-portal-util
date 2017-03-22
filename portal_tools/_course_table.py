@@ -9,7 +9,7 @@ _idsPattern = ur'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\
               ur'lse{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
 
 
-def getCourseTable(semester_id=123, **kwargs):
+def getCourseTable(semester_id, **kwargs):
     if kwargs.has_key('session'):
         session = kwargs['session']
     elif kwargs.has_key('username') and kwargs.has_key('password'):
