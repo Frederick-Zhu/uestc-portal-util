@@ -4,7 +4,7 @@ import bs4
 import portal_tools
 
 
-def getMajorId(**kwargs):
+def getClassId(**kwargs):
     if kwargs.has_key('session'):
         session = kwargs['session']
     elif kwargs.has_key('username') and kwargs.has_key('password'):
