@@ -8,7 +8,7 @@ def grade(**kwargs):
     if kwargs.has_key('session'):
         session = kwargs['session']
     elif kwargs.has_key('username') and kwargs.has_key('password'):
-        session = portal_tools.IdasSession(kwargs['username'], kwargs['password'])
+        session = portal_tools._IdasSession(kwargs['username'], kwargs['password'])
     else:
         raise ValueError
 

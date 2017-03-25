@@ -9,14 +9,14 @@ from requests.packages.urllib3.util.retry import Retry
 from portal_tools import errors
 
 
-class IdasSession(Session):
+class _IdasSession(Session):
     _timeout = 10
     _max_retries = 10
 
     def __init__(self, username, password):
-        super(IdasSession, self).__init__()
+        super(_IdasSession, self).__init__()
 
-        _retry = Retry(IdasSession._max_retries, status_forcelist=[500, ], backoff_factor=0.2)
+        _retry = Retry(_IdasSession._max_retries, status_forcelist=[500, ], backoff_factor=0.2)
         _http_adapter = HTTPAdapter(max_retries=_retry)
 
         self.mount('http://', _http_adapter)
@@ -70,18 +70,35 @@ class IdasSession(Session):
         headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55' \
                                 '.0.2883.87 Safari/537.36'
 
-        return super(IdasSession, self).request(method=method, url=url, params=params, data=data, headers=headers,
-                                                cookies=cookies, files=files, auth=auth,
-                                                timeout=timeout or IdasSession._timeout,
-                                                allow_redirects=allow_redirects, proxies=proxies, hooks=hooks,
-                                                stream=stream, verify=verify, cert=cert, json=json)
+        return super(_IdasSession, self).request(method=method, url=url, params=params, data=data, headers=headers,
+                                                 cookies=cookies, files=files, auth=auth,
+                                                 timeout=timeout or _IdasSession._timeout,
+                                                 allow_redirects=allow_redirects, proxies=proxies, hooks=hooks,
+                                                 stream=stream, verify=verify, cert=cert, json=json)
 
     def get(self, url, **kwargs):
-        ret = super(IdasSession, self).get(url, **kwargs)
+        ret = super(_IdasSession, self).get(url, **kwargs)
         ret.raise_for_status()
         return ret
 
     def post(self, url, data=None, json=None, **kwargs):
-        ret = super(IdasSession, self).post(url=url, data=data, json=json, **kwargs)
+        ret = super(_IdasSession, self).post(url=url, data=data, json=json, **kwargs)
         ret.raise_for_status()
         return ret
+
+
+class PortalUtil(object):
+    session = None
+
+    def __init__(self, username, password):
+        if not self.session:
+            self.session = _IdasSession(username=username, password=password)
+
+    def getTotalGpa(self):
+        get_all_grade = self.session.post(
+            'http://eams.uestc.edu.cn/eams/teach/grade/course/person!historyCourseGrade.action',
+            params={'projectType': 'MAJOR'})
+
+        grade_sum_table = bs4.BeautifulSoup(get_all_grade.content, 'html.parser').find_all(name='table')[0]
+
+        return grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-1].text.strip()
