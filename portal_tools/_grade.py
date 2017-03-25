@@ -39,7 +39,7 @@ def getGrade(semester_id, **kwargs):
     return grade_list
 
 
-def getAllGrade(semester_id, **kwargs):
+def getAllGrade(**kwargs):
     if kwargs.has_key('session'):
         session = kwargs['session']
     elif kwargs.has_key('username') and kwargs.has_key('password'):
