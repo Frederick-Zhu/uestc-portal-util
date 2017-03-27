@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import datetime
 import re
 
 import bs4
@@ -6,6 +7,7 @@ import types
 from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from typing import Optional, Union, Dict, List
 
 from portal_tools import errors
 
@@ -90,7 +92,6 @@ class _IdasSession(Session):
 
 class PortalUtil(object):
     session = None
-    _idsPattern = ur'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}else{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
 
     def __init__(self, username, password):
         # type: (str, str) -> None
@@ -124,10 +125,13 @@ class PortalUtil(object):
         return grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-1].text.strip()
 
     def getCourseTable(self, semester_id):
-        # type: (int) -> list
+        # type: (int) -> List[Dict[str, str]]
+        _idsPattern = ur'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\.addInput\(form,"ids","(\d+)' \
+                      ur'"\);\s*}else{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
+
         get_course_table_for_std = self.session.get('http://eams.uestc.edu.cn/eams/courseTableForStd.action')
 
-        ids = re.compile(pattern=self._idsPattern).search(string=get_course_table_for_std.content).groups()
+        ids = re.compile(pattern=_idsPattern).search(string=get_course_table_for_std.content).groups()
 
         post_course_table_for_std = self.session.post(
             'http://eams.uestc.edu.cn/eams/courseTableForStd!courseTable.action',
@@ -142,7 +146,7 @@ class PortalUtil(object):
         course_table_list = list()
 
         for tr in course_table_for_std_table.find(name='tbody').find_all(name='tr'):
-            course_info = dict()
+            course_info = dict()  # type: Dict[str, str]
             td = tr.find_all(name='td')
 
             course_info['code'] = td[1].text.strip()
@@ -224,3 +228,72 @@ class PortalUtil(object):
         for course in course_table_list:
             if course['sn'] in grade_dict.keys():
                 print course['name'], grade_dict[course['sn']]
+
+    def getCourseFinalExamTime(self, course_id, semester_id=143):
+        # type: (str, int) -> Optional[Dict[str, Union[str, int, datetime]]]
+        finalExamTimePattern = ur'第(\d+)周\s星期[一二三四五六日]\((\d{4})(\d{2})(\d{2})\)\s(\d{2}):(\d{2})-(\d{2}):(\d' \
+                               ur'{2})'
+        post_public_search_data = {'lesson.project.id': '1',
+                                   'lesson.no': str(course_id),
+                                   'lesson.course.name': '',
+                                   'lesson.teachDepart.id': '...',
+                                   'limitGroup.depart.id': '...',
+                                   'teacher.name': '',
+                                   'fake.teacher.null': '...',
+                                   'limitGroup.grade': '',
+                                   'fake.weeks': '',
+                                   'startWeekSchedule': '',
+                                   'endWeekSchedule': '',
+                                   'fake.time.weekday': '...',
+                                   'fake.time.unit': '',
+                                   'lesson.campus.id': '...',
+                                   'lesson.courseType.id': '...',
+                                   'examType.id': '1',
+                                   'lesson.semester.id': 'undefined'}
+
+        self.session.post('http://eams.uestc.edu.cn/eams/publicSearch!index.action',
+                          data={'semester.id': semester_id})
+
+        post_public_search = self.session.post('http://eams.uestc.edu.cn/eams/publicSearch!search.action',
+                                               data=post_public_search_data)
+
+        post_public_search_soup = bs4.BeautifulSoup(post_public_search.content, 'lxml').find(name='tbody').find(
+            name='tr').find_all(name='td')  # type: bs4.BeautifulSoup
+
+        final_exam_time_re_search = re.compile(pattern=finalExamTimePattern).search(
+            string=post_public_search_soup[10].text)
+
+        ret = dict()
+
+        if final_exam_time_re_search is not None:
+            course_name = post_public_search_soup[2].text  # type: str
+            week = int(final_exam_time_re_search.group(1))  # type: int
+            year = int(final_exam_time_re_search.group(2))  # type: int
+            month = int(final_exam_time_re_search.group(3))  # type: int
+            day = int(final_exam_time_re_search.group(4))  # type: int
+            begin_hour = int(final_exam_time_re_search.group(5))  # type: int
+            begin_minute = int(final_exam_time_re_search.group(6))  # type: int
+            end_hour = int(final_exam_time_re_search.group(7))  # type: int
+            end_minute = int(final_exam_time_re_search.group(8))  # type: int
+            ret = {'courseName': course_name,
+                   'examWeek': week,
+                   'examBegin': datetime.datetime(year, month, day, begin_hour, begin_minute),
+                   'examEnd': datetime.datetime(year, month, day, end_hour, end_minute)}
+        return ret
+
+    def getFinalExamTime(self, semester_id):
+        # type: (int) -> List[Dict[str, Union[str, int, datetime]]]
+        course_list = self.getCourseTable(semester_id=semester_id)  # type: List[Dict[str, str]]
+
+        course_sn_list = list()  # type: List[str]
+        for course in course_list:
+            course_sn_list.append(course.get('sn'))
+
+        final_exam_time_list = list()  # type: List[Dict[str, Union[str, int, datetime]]]
+
+        for course_sn in course_sn_list:
+            final_exam_time = self.getCourseFinalExamTime(course_id=course_sn, semester_id=semester_id)
+            if final_exam_time:
+                final_exam_time_list.append(final_exam_time)
+
+        return final_exam_time_list
