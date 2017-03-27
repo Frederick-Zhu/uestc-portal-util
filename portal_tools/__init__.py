@@ -1,7 +1,8 @@
 # -*- coding:utf-8 -*-
-import types
+import re
 
 import bs4
+import types
 from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -89,12 +90,31 @@ class _IdasSession(Session):
 
 class PortalUtil(object):
     session = None
+    _idsPattern = ur'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}else{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
 
     def __init__(self, username, password):
+        # type: (str, str) -> None
         if not self.session:
             self.session = _IdasSession(username=username, password=password)
 
+    def getClassId(self):
+        # type: () -> str
+        """Get user's class id."""
+        get_info = self.session.get('http://eams.uestc.edu.cn/eams/stdDetail.action')
+
+        info_table = bs4.BeautifulSoup(get_info.content, 'html.parser').find_all(name='table')[
+            0]  # type: bs4.BeautifulSoup
+        class_id = info_table.find_all(name='tr')[12].find_all(name='td')[1].text.strip()
+
+        return class_id
+
+    def getMajorId(self):
+        # type: () -> str
+        """Get user's major id."""
+        return self.getClassId()[:-2]
+
     def getTotalGpa(self):
+        # type: () -> str
         get_all_grade = self.session.post(
             'http://eams.uestc.edu.cn/eams/teach/grade/course/person!historyCourseGrade.action',
             params={'projectType': 'MAJOR'})
@@ -102,3 +122,105 @@ class PortalUtil(object):
         grade_sum_table = bs4.BeautifulSoup(get_all_grade.content, 'html.parser').find_all(name='table')[0]
 
         return grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-1].text.strip()
+
+    def getCourseTable(self, semester_id):
+        # type: (int) -> list
+        get_course_table_for_std = self.session.get('http://eams.uestc.edu.cn/eams/courseTableForStd.action')
+
+        ids = re.compile(pattern=self._idsPattern).search(string=get_course_table_for_std.content).groups()
+
+        post_course_table_for_std = self.session.post(
+            'http://eams.uestc.edu.cn/eams/courseTableForStd!courseTable.action',
+            data={'ignoreHead': 1,
+                  'setting.kind': 'std',
+                  'startWeek': 1,
+                  'semester.id': semester_id, 'ids': ids[0]})
+
+        course_table_for_std_table = \
+            bs4.BeautifulSoup(post_course_table_for_std.content, 'html.parser').find_all(name='table')[1]
+
+        course_table_list = list()
+
+        for tr in course_table_for_std_table.find(name='tbody').find_all(name='tr'):
+            course_info = dict()
+            td = tr.find_all(name='td')
+
+            course_info['code'] = td[1].text.strip()
+            course_info['name'] = td[2].text.strip()
+            course_info['credit'] = td[3].text.strip()
+            course_info['sn'] = td[4].text.strip()
+            course_info['teacher'] = td[5].text.strip()
+
+            course_table_list.append(course_info)
+
+        return course_table_list
+
+    def getAllGrade(self):
+        # type: () -> list
+        get_all_grade = self.session.post(
+            'http://eams.uestc.edu.cn/eams/teach/grade/course/person!historyCourseGrade.action',
+            params={'projectType': 'MAJOR'})
+
+        all_grade_table = bs4.BeautifulSoup(get_all_grade.content, 'html.parser').find_all(name='table')[1]
+
+        all_grade_list = list()
+
+        for tr in all_grade_table.find(name='tbody').find_all(name='tr'):
+            grade_info = dict()
+            td = tr.find_all(name='td')
+
+            grade_info['year'] = td[0].text.strip()
+            grade_info['code'] = td[1].text.strip()
+            grade_info['sn'] = td[2].text.strip()
+            grade_info['name'] = td[3].text.strip()
+            grade_info['type'] = td[4].text.strip()
+            grade_info['credit'] = td[5].text.strip()
+            grade_info['score'] = td[6].text.strip()
+            grade_info['total'] = td[7].text.strip()
+
+            all_grade_list.append(grade_info)
+
+        return all_grade_list
+
+    def getGrade(self, semester_id):
+        # type: (int) -> list
+        get_grade = self.session.get('http://eams.uestc.edu.cn/eams/teach/grade/course/person!search.action',
+                                     params={'semesterId': semester_id,
+                                             'projectType': ''})
+
+        grade_form = bs4.BeautifulSoup(get_grade.content, 'html.parser').find(name='table')
+
+        grade_list = list()
+
+        for tr in grade_form.find(name='tbody').find_all(name='tr'):
+            grade_info = dict()
+            td = tr.find_all(name='td')
+
+            grade_info['year'] = td[0].text.strip()
+            grade_info['code'] = td[1].text.strip()
+            grade_info['sn'] = td[2].text.strip()
+            grade_info['name'] = td[3].text.strip()
+            grade_info['type'] = td[4].text.strip()
+            grade_info['credit'] = td[5].text.strip()
+            grade_info['score'] = td[6].text.strip()
+            grade_info['resit'] = td[7].text.strip()
+            grade_info['total'] = td[8].text.strip()
+            grade_info['gpa'] = td[9].text.strip()
+
+            grade_list.append(grade_info)
+
+        return grade_list
+
+    def grade(self, semester_id=123):
+        # type: (int) -> None
+        course_table_list = self.getCourseTable(semester_id=semester_id)
+
+        grade_list = self.getGrade(semester_id=semester_id)  # type: list
+
+        grade_dict = dict()
+        for grade_info in grade_list:
+            grade_dict[grade_info['sn']] = grade_info
+
+        for course in course_table_list:
+            if course['sn'] in grade_dict.keys():
+                print course['name'], grade_dict[course['sn']]
