@@ -230,7 +230,7 @@ class PortalUtil(object):
                 print course['name'], grade_dict[course['sn']]
 
     def getCourseFinalExamTime(self, course_id, semester_id=143):
-        # type: (str, int) -> Optional[Dict[str, Union[str, int, datetime]]]
+        # type: (str, int) -> Optional[Dict[str, Union[str, int, datetime.datetime]]]
         finalExamTimePattern = ur'第(\d+)周\s星期[一二三四五六日]\((\d{4})(\d{2})(\d{2})\)\s(\d{2}):(\d{2})-(\d{2}):(\d' \
                                ur'{2})'
         post_public_search_data = {'lesson.project.id': '1',
@@ -282,14 +282,14 @@ class PortalUtil(object):
         return ret
 
     def getFinalExamTime(self, semester_id):
-        # type: (int) -> List[Dict[str, Union[str, int, datetime]]]
+        # type: (int) -> List[Dict[str, Union[str, int, datetime.datetime]]]
         course_list = self.getCourseTable(semester_id=semester_id)  # type: List[Dict[str, str]]
 
         course_sn_list = list()  # type: List[str]
         for course in course_list:
             course_sn_list.append(course.get('sn'))
 
-        final_exam_time_list = list()  # type: List[Dict[str, Union[str, int, datetime]]]
+        final_exam_time_list = list()  # type: List[Dict[str, Union[str, int, datetime.datetime]]]
 
         for course_sn in course_sn_list:
             final_exam_time = self.getCourseFinalExamTime(course_id=course_sn, semester_id=semester_id)
