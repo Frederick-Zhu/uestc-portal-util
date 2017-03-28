@@ -229,8 +229,8 @@ class PortalUtil(object):
             if course['sn'] in grade_dict.keys():
                 print course['name'], grade_dict[course['sn']]
 
-    def getCourseFinalExamTime(self, course_id, semester_id=143):
-        # type: (str, int) -> Optional[Dict[str, Union[str, int, datetime.datetime]]]
+    def getCourseFinalExamTime(self, semester_id, course_id):
+        # type: (int, str) -> Optional[Dict[str, Union[str, int, datetime.datetime]]]
         finalExamTimePattern = ur'第(\d+)周\s星期[一二三四五六日]\((\d{4})(\d{2})(\d{2})\)\s(\d{2}):(\d{2})-(\d{2}):(\d' \
                                ur'{2})'
         post_public_search_data = {'lesson.project.id': '1',
@@ -292,8 +292,10 @@ class PortalUtil(object):
         final_exam_time_list = list()  # type: List[Dict[str, Union[str, int, datetime.datetime]]]
 
         for course_sn in course_sn_list:
-            final_exam_time = self.getCourseFinalExamTime(course_id=course_sn, semester_id=semester_id)
+            final_exam_time = self.getCourseFinalExamTime(semester_id=semester_id, course_id=course_sn)
             if final_exam_time:
                 final_exam_time_list.append(final_exam_time)
+
+        final_exam_time_list.sort(key=lambda course: course['examBegin'])
 
         return final_exam_time_list
