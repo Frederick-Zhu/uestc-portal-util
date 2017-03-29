@@ -22,7 +22,7 @@ def index_page():
 def login():
     form_data = request.form  # type: werkzeug.datastructures.ImmutableMultiDict
 
-    if not form_data.has_key('username') and form_data.has_key('password'):
+    if not form_data.has_key('username') or not form_data.has_key('password'):
         flash('Form data ERROR!', 'danger')
         return redirect(url_for('index_page'))
 
@@ -55,4 +55,15 @@ def logout():
 
 @app.route('/final_exam_time')
 def final_exam_time():
-    return 'WIP'
+    if not session.has_key('username') or not session.has_key('password'):
+        return redirect(url_for('index_page'))
+
+    portal = portal_tools.PortalUtil(username=session.get('username'),
+                                     password=session.get('password'))
+
+    final_exam_time_list = portal.getFinalExamTime(semester_id=143)
+
+    final_exam_time_list.sort(key=lambda course: course['examBegin'])
+
+    return render_template('final_exam_time.html',
+                           final_exam_time_list=final_exam_time_list)
