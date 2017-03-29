@@ -93,6 +93,8 @@ class _IdasSession(Session):
 class PortalUtil(object):
     session = None
 
+    rmb_per_credit = 60
+
     def __init__(self, username, password):
         # type: (str, str) -> None
         if not self.session:
@@ -115,14 +117,24 @@ class PortalUtil(object):
         return self.getClassId()[:-2]
 
     def getTotalGpa(self):
-        # type: () -> str
+        # type: () -> float
         get_all_grade = self.session.post(
             'http://eams.uestc.edu.cn/eams/teach/grade/course/person!historyCourseGrade.action',
             params={'projectType': 'MAJOR'})
 
         grade_sum_table = bs4.BeautifulSoup(get_all_grade.content, 'html.parser').find_all(name='table')[0]
 
-        return grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-1].text.strip()
+        return float(grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-1].text.strip())
+
+    def getTotalCredit(self):
+        # type: () -> Optional[float]
+        get_all_grade = self.session.post(
+            'http://eams.uestc.edu.cn/eams/teach/grade/course/person!historyCourseGrade.action',
+            params={'projectType': 'MAJOR'})
+
+        grade_sum_table = bs4.BeautifulSoup(get_all_grade.content, 'html.parser').find_all(name='table')[0]
+
+        return float(grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-2].text.strip())
 
     def getCourseTable(self, semester_id):
         # type: (int) -> List[Dict[str, str]]
@@ -160,7 +172,7 @@ class PortalUtil(object):
         return course_table_list
 
     def getAllGrade(self):
-        # type: () -> list
+        # type: () -> List[Dict[str, Union[str, float]]]
         get_all_grade = self.session.post(
             'http://eams.uestc.edu.cn/eams/teach/grade/course/person!historyCourseGrade.action',
             params={'projectType': 'MAJOR'})
@@ -178,7 +190,7 @@ class PortalUtil(object):
             grade_info['sn'] = td[2].text.strip()
             grade_info['name'] = td[3].text.strip()
             grade_info['type'] = td[4].text.strip()
-            grade_info['credit'] = td[5].text.strip()
+            grade_info['credit'] = float(td[5].text.strip())
             grade_info['score'] = td[6].text.strip()
             grade_info['total'] = td[7].text.strip()
 
@@ -299,3 +311,44 @@ class PortalUtil(object):
         final_exam_time_list.sort(key=lambda course: course['examBegin'])
 
         return final_exam_time_list
+
+    def grade2gpa(self, grade):
+        if isinstance(grade, str) or isinstance(grade, unicode):
+            if grade.isdecimal():
+                grade = int(grade)
+
+        if 60 <= grade <= 85:
+            return grade / 10.0 - 4.5
+        elif grade < 60:
+            return 0.0
+        elif grade > 85:
+            return 4.0
+        else:
+            return 0.0
+
+    def getGradeAnalyze(self):
+        # type: () -> List[Dict[str, Union[str, float]]]
+        total_gpa = self.getTotalGpa()
+        total_credit = self.getTotalCredit()  # type: float
+        grade_list = self.getAllGrade()  # type: List[Dict[str, str]]
+
+        for course in grade_list:
+            course['gpa'] = self.grade2gpa(course.get('total'))
+            course['gpato4'] = (4 - course.get('gpa')) * course.get('credit') / total_credit
+            course['rmb_per_gpa'] = course.get('credit') * self.rmb_per_credit / course.get(
+                'gpato4') / 10 if course.get('gpato4') != 0 else 0.0
+
+        gpato4_sort = sorted(grade_list,
+                             key=lambda course: course.get('gpato4'),
+                             reverse=True)
+
+        rmb_per_credit_sort = sorted(grade_list,
+                                     key=lambda course: course.get('rmb_per_gpa') if course.get(
+                                         'rmb_per_gpa') != 0.0 else float('inf'))
+
+        for course in grade_list:
+            course['ratio'] = 0.5 * gpato4_sort.index(course) + 0.5 * rmb_per_credit_sort.index(course)
+
+        grade_list.sort(key=lambda course: course.get('ratio'))
+
+        return grade_list
