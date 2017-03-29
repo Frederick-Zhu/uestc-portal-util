@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import werkzeug.datastructures
 from flask import render_template, request, session, url_for, redirect, flash, g
+from typing import List, Dict, Union
 
 import portal_tools
 import portal_tools.errors
@@ -71,3 +72,24 @@ def final_exam_time():
 
     return render_template('final_exam_time.html',
                            final_exam_time_list=final_exam_time_list)
+
+
+@app.route('/grade_analyze')
+def grade_analyze():
+    total_gpa = g.portal.getTotalGpa()
+    grade_list = g.portal.getGradeAnalyze()  # type:List[Dict[str, Union[str, float]]]
+
+    grade_list.sort(key=lambda course: course.get('total'))
+    grade_list.sort(key=lambda course: course.get('year'))
+    grade_list.sort(key=lambda course: course.get('ratio'))
+    grade_list.sort(key=lambda course: course.get('semester'))
+
+    for course in grade_list:
+        course['rmb_per_gpa'] = str(round(course.get('rmb_per_gpa'), 2)) if course.get('gpa') != 4.0 else ''
+        course['rmb'] = str(course.get('rmb')) if course.get('gpa') != 4.0 else ''
+        course['gpato4'] = str(round(course.get('gpato4'), 2)) if course.get('gpa') != 4.0 else ''
+        course['ratio'] = str(course.get('ratio')) if course.get('gpa') != 4.0 else ''
+
+    return render_template('grade_analyze.html',
+                           total_gpa=total_gpa,
+                           grade_list=grade_list)

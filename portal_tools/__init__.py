@@ -333,10 +333,13 @@ class PortalUtil(object):
         grade_list = self.getAllGrade()  # type: List[Dict[str, str]]
 
         for course in grade_list:
+            course['semester'] = int(course.get('year').split(' ')[1])
+            course['year'] = course.get('year').split(' ')[0]
             course['gpa'] = self.grade2gpa(course.get('total'))
             course['gpato4'] = (4 - course.get('gpa')) * course.get('credit') / total_credit
             course['rmb_per_gpa'] = course.get('credit') * self.rmb_per_credit / course.get(
                 'gpato4') / 10 if course.get('gpato4') != 0 else 0.0
+            course['rmb'] = course.get('credit') * self.rmb_per_credit
 
         gpato4_sort = sorted(grade_list,
                              key=lambda course: course.get('gpato4'),
@@ -347,7 +350,8 @@ class PortalUtil(object):
                                          'rmb_per_gpa') != 0.0 else float('inf'))
 
         for course in grade_list:
-            course['ratio'] = 0.5 * gpato4_sort.index(course) + 0.5 * rmb_per_credit_sort.index(course)
+            course['ratio'] = 0.5 * gpato4_sort.index(course) + 0.5 * rmb_per_credit_sort.index(course) if course.get(
+                'gpa') != 4.0 else float('inf')
 
         grade_list.sort(key=lambda course: course.get('ratio'))
 

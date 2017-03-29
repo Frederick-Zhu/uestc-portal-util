@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>grade_analyze</title>
+
+    <link href="../static/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <ol class="breadcrumb">
+        <li><a href="{{ url_for('index_page') }}">Home</a></li>
+        <li class="active">grade_analyze</li>
+    </ol>
+    <div class="jumbotron">
+        <p>成绩分析</p>
+        <p><strong>仅供参考</strong></p>
+        <p>当前算法为 对总GPA贡献值 权重0.5 性价比 权重0.5</p>
+    </div>
+    <p><strong>GPA: {{ total_gpa }}</strong></p>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>课程学年</th>
+            <th>课程学期</th>
+            <th>课程名称</th>
+            <th>课程学分</th>
+            <th>总评成绩</th>
+            <th>GPA</th>
+            <th>ratio</th>
+            <th>这门课GPA刷到4.0<br>对总GPA的贡献</th>
+            <th>这门课把总GPA<br>刷高0.1所需的价格</th>
+            <th>费用预估</th>
+        </tr>
+        </thead>
+        {% if grade_list %}
+            <tbody>
+            {% for course in grade_list %}
+                <tr>
+                    <td>{{ course['year'] }}</td>
+                    <td>{{ course['semester'] }}</td>
+                    <td>{{ course['name'] }}</td>
+                    <td>{{ course['credit'] }}</td>
+                    <td>{{ course['total'] }}</td>
+                    <td>{{ course['gpa'] }}</td>
+                    <td>{{ course['ratio'] }}</td>
+                    <td>{{ course['gpato4'] }}</td>
+                    <td>{{ course['rmb_per_gpa'] }}</td>
+                    <td>{{ course['rmb'] }}</td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        {% endif %}
+    </table>
+</div>
+
+<script src="../static/js/jquery-3.2.0.js"></script>
+<script src="../static/js/bootstrap.js"></script>
+</body>
+</html>

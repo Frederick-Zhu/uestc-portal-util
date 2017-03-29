@@ -31,10 +31,12 @@
             {% if login_vaild %}
                 <div class="list-group">
                     <a href="{{ url_for('final_exam_time') }}" class="list-group-item">期末考试时间预测</a>
+                    <a href="{{ url_for('grade_analyze') }}" class="list-group-item">成绩分析</a>
                 </div>
             {% else %}
                 <ul class="list-group">
                     <li class="list-group-item">期末考试时间预测</li>
+                    <li class="list-group-item">成绩分析</li>
                 </ul>
 
             {% endif %}
