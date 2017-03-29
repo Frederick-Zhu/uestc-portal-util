@@ -1,13 +1,21 @@
 # -*- coding:utf-8 -*-
 import werkzeug.datastructures
-from flask import render_template, request, session
+from flask import render_template, request, session, url_for, redirect, flash
 
+import portal_tools
+import portal_tools.errors
 from server import app
 
 
 @app.route('/')
 def index_page():
-    return render_template('index.html')
+    if session.has_key('username') and session.has_key('password'):
+        return render_template('index.html', login_vaild=True)
+    else:
+        return render_template('index.html', login_vaild=False)
+
+
+
 
 
 @app.route('/login', methods=['POST', ])
@@ -15,9 +23,36 @@ def login():
     form_data = request.form  # type: werkzeug.datastructures.ImmutableMultiDict
 
     if not form_data.has_key('username') and form_data.has_key('password'):
-        raise ValueError
+        flash('Form data ERROR!', 'danger')
+        return redirect(url_for('index_page'))
 
-    session['username'] = form_data.get('username')
-    session['password'] = form_data.get('password')
+    username = form_data.get('username')
+    password = form_data.get('password')
 
-    return ''
+    try:
+        portal_tools.PortalUtil(username=username, password=password)
+    except portal_tools.errors.IdasUsrPwdError:
+        flash('Student ID or password wrong.', 'danger')
+        return redirect(url_for('index_page'))
+    except portal_tools.errors.IdasNeedCaptcha:
+        flash('Need captcha.', 'danger')
+        return redirect(url_for('index_page'))
+
+    session['username'] = username
+    session['password'] = password
+
+    flash('Login success.', 'success')
+    return redirect(url_for('index_page'))
+
+
+@app.route('/logout')
+def logout():
+    session.pop('username')
+    session.pop('password')
+    flash('Logout success.', 'success')
+    return redirect(url_for('index_page'))
+
+
+@app.route('/final_exam_time')
+def final_exam_time():
+    return 'WIP'
