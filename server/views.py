@@ -1,4 +1,6 @@
 # -*- coding:utf-8 -*-
+from functools import wraps
+
 import werkzeug.datastructures
 from flask import render_template, request, session, url_for, redirect, flash, g
 from typing import List, Dict, Union
@@ -8,17 +10,20 @@ import portal_tools.errors
 from server import app
 
 
-@app.before_request
-def before_request():
-    if request.method == 'GET' and request.path != url_for('index_page'):
+def need_login(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
         if session.has_key('username') and session.has_key('password'):
             try:
                 g.portal = portal_tools.PortalUtil(username=session.get('username'),
                                                    password=session.get('password'))  # type: portal_tools.PortalUtil
+                return func(*args, **kwargs)
             except:
-                return redirect(url_for(index_page))
+                return redirect(url_for('index_page'))
         else:
             return redirect(url_for('index_page'))
+
+    return decorated_view
 
 
 @app.route('/')
@@ -65,6 +70,7 @@ def logout():
 
 
 @app.route('/final_exam_time')
+@need_login
 def final_exam_time():
     final_exam_time_list = g.portal.getFinalExamTime(semester_id=143)
 
@@ -75,6 +81,7 @@ def final_exam_time():
 
 
 @app.route('/grade_analyze')
+@need_login
 def grade_analyze():
     total_gpa = g.portal.getTotalGpa()
     grade_list = g.portal.getGradeAnalyze()  # type:List[Dict[str, Union[str, float]]]
