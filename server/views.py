@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 from functools import wraps
 
+import arrow
 import werkzeug.datastructures
 from flask import render_template, request, session, url_for, redirect, flash, g
 from typing import List, Dict, Union
@@ -72,9 +73,14 @@ def logout():
 @app.route('/final_exam_time')
 @need_login
 def final_exam_time():
-    final_exam_time_list = g.portal.getFinalExamTime(semester_id=143)
+    final_exam_time_list = g.portal.getFinalExamTime(
+        semester_id=143)  # type: List[Dict[str, Union[str, int, arrow.Arrow]]]
 
     final_exam_time_list.sort(key=lambda course: course['examBegin'])
+
+    for course in final_exam_time_list:
+        course['examBegin'] = course.get('examBegin').format('YYYY-M-D HH:mm')
+        course['examEnd'] = course.get('examEnd').format('YYYY-M-D HH:mm')
 
     return render_template('final_exam_time.html',
                            final_exam_time_list=final_exam_time_list)
