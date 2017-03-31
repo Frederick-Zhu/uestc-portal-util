@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
-import datetime
 import re
 
+import arrow
 import bs4
 import types
 from requests import Session
@@ -242,7 +242,7 @@ class PortalUtil(object):
                 print course['name'], grade_dict[course['sn']]
 
     def getCourseFinalExamTime(self, semester_id, course_id):
-        # type: (int, str) -> Optional[Dict[str, Union[str, int, datetime.datetime]]]
+        # type: (int, str) -> Optional[Dict[str, Union[str, int, arrow.Arrow]]]
         finalExamTimePattern = ur'第(\d+)周\s星期[一二三四五六日]\((\d{4})(\d{2})(\d{2})\)\s(\d{2}):(\d{2})-(\d{2}):(\d' \
                                ur'{2})'
         post_public_search_data = {'lesson.project.id': '1',
@@ -289,19 +289,19 @@ class PortalUtil(object):
             end_minute = int(final_exam_time_re_search.group(8))  # type: int
             ret = {'courseName': course_name,
                    'examWeek': week,
-                   'examBegin': datetime.datetime(year, month, day, begin_hour, begin_minute),
-                   'examEnd': datetime.datetime(year, month, day, end_hour, end_minute)}
+                   'examBegin': arrow.get(year, month, day, begin_hour, begin_minute, tzinfo='+08:00'),
+                   'examEnd': arrow.get(year, month, day, end_hour, end_minute, tzinfo='+08:00')}
         return ret
 
     def getFinalExamTime(self, semester_id):
-        # type: (int) -> List[Dict[str, Union[str, int, datetime.datetime]]]
+        # type: (int) -> List[Dict[str, Union[str, int, arrow.Arrow]]]
         course_list = self.getCourseTable(semester_id=semester_id)  # type: List[Dict[str, str]]
 
         course_sn_list = list()  # type: List[str]
         for course in course_list:
             course_sn_list.append(course.get('sn'))
 
-        final_exam_time_list = list()  # type: List[Dict[str, Union[str, int, datetime.datetime]]]
+        final_exam_time_list = list()  # type: List[Dict[str, Union[str, int, arrow.Arrow]]]
 
         for course_sn in course_sn_list:
             final_exam_time = self.getCourseFinalExamTime(semester_id=semester_id, course_id=course_sn)
