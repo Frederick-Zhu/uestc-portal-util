@@ -41,3 +41,17 @@ def api_v0_1_final_exam_time():
         course['examEnd'] = course.get('examEnd').for_json()
 
     return jsonify(final_exam_time_list)
+
+
+@app.route('/api/v0.1/total_gpa', methods=['POST', ])
+@need_login
+def api_v0_1_total_gpa():
+    total_gpa = g.portal.getTotalGpa()  # type: float
+    return jsonify(total_gpa)
+
+
+@app.route('/api/v0.1/grade_analyze', methods=['POST', ])
+@need_login
+def api_v0_1_grade_analyze():
+    grade_list = g.portal.getGradeAnalyze()  # type: List[Dict[str, Union[str, float]]]
+    return jsonify(grade_list)
