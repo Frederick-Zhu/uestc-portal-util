@@ -79,6 +79,8 @@ def final_exam_time():
     final_exam_time_list = g.portal.getFinalExamTime(
         semester_id=143)  # type: List[Dict[str, Union[str, int, arrow.Arrow]]]
 
+    print(final_exam_time_list)
+
     final_exam_time_list.sort(key=lambda course: course['examBegin'])
 
     for course in final_exam_time_list:
@@ -105,6 +107,7 @@ def grade_analyze():
         course['rmb'] = str(course.get('rmb')) if course.get('gpa') != 4.0 else ''
         course['gpato4'] = str(round(course.get('gpato4'), 2)) if course.get('gpa') != 4.0 else ''
         course['ratio'] = str(course.get('ratio')) if course.get('gpa') != 4.0 else ''
+        course['gpa'] = str(round(course.get('gpa'), 2))
 
     return render_template('grade_analyze.html',
                            total_gpa=total_gpa,

@@ -136,7 +136,7 @@ class PortalUtil(object):
             params={'projectType': 'MAJOR'})
 
         grade_sum_table = bs4.BeautifulSoup(get_all_grade.content, 'html.parser').find_all(name='table')[0]
-
+        
         return float(grade_sum_table.find_all(name='tr')[-2].find_all(name='th')[-2].text.strip())
 
     def getCourseTable(self, semester_id):
@@ -316,6 +316,17 @@ class PortalUtil(object):
         return final_exam_time_list
 
     def grade2gpa(self, grade):
+        if (grade == '通过'):
+            return 4.0
+        if (grade == 'A'):
+            return 4.0
+        if (grade == 'B'):
+            return 3.0
+        if (grade == 'C'):
+            return 2.0
+        if (grade == 'D'):
+            return 1.0
+
         if isinstance(grade, str) or isinstance(grade, unicode):
             if grade.isdecimal():
                 grade = int(grade)
@@ -338,12 +349,12 @@ class PortalUtil(object):
         for course in grade_list:
             course['semester'] = int(course.get('year').split(' ')[1])
             course['year'] = course.get('year').split(' ')[0]
-            course['gpa'] = self.grade2gpa(course.get('total'))
+            course['gpa'] = self.grade2gpa(course.get('score').split(' ')[0])
             course['gpato4'] = (4 - course.get('gpa')) * course.get('credit') / total_credit
             course['rmb_per_gpa'] = course.get('credit') * self.rmb_per_credit / course.get(
                 'gpato4') / 10 if course.get('gpato4') != 0 else 0.0
             course['rmb'] = course.get('credit') * self.rmb_per_credit
-
+            
         gpato4_sort = sorted(grade_list,
                              key=lambda course: course.get('gpato4'),
                              reverse=True)

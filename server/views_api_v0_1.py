@@ -14,7 +14,8 @@ def need_login(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
         form_data = request.form
-        if form_data.has_key('username') and form_data.has_key('password'):
+        if 'username' in form_data and 'password' in form_data:
+        # if form_data.has_key('username') and form_data.has_key('password'):
             try:
                 g.portal = portal_tools.PortalUtil(username=form_data.get('username'),
                                                    password=form_data.get('password'))  # type: portal_tools.PortalUtil
