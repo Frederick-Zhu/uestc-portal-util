@@ -14,7 +14,8 @@ from server import app
 def need_login(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if session.has_key('username') and session.has_key('password'):
+        if 'username' in session and 'password' in session:
+        # if session.has_key('username') and session.has_key('password'):
             try:
                 g.portal = portal_tools.PortalUtil(username=session.get('username'),
                                                    password=session.get('password'))  # type: portal_tools.PortalUtil
@@ -29,7 +30,8 @@ def need_login(func):
 
 @app.route('/')
 def index_page():
-    if session.has_key('username') and session.has_key('password'):
+    if 'username' in session and 'password' in session:
+    # if session.has_key('username') and session.has_key('password'):
         return render_template('index.html', login_vaild=True)
     else:
         return render_template('index.html', login_vaild=False)
@@ -39,7 +41,8 @@ def index_page():
 def login():
     form_data = request.form  # type: werkzeug.datastructures.ImmutableMultiDict
 
-    if not form_data.has_key('username') or not form_data.has_key('password'):
+    if not ('username' in form_data) or not ('password' in form_data):
+    # if not form_data.has_key('username') or not form_data.has_key('password'):
         flash('Form data ERROR!', 'danger')
         return redirect(url_for('index_page'))
 
@@ -76,6 +79,8 @@ def final_exam_time():
     final_exam_time_list = g.portal.getFinalExamTime(
         semester_id=143)  # type: List[Dict[str, Union[str, int, arrow.Arrow]]]
 
+    print(final_exam_time_list)
+
     final_exam_time_list.sort(key=lambda course: course['examBegin'])
 
     for course in final_exam_time_list:
@@ -102,6 +107,7 @@ def grade_analyze():
         course['rmb'] = str(course.get('rmb')) if course.get('gpa') != 4.0 else ''
         course['gpato4'] = str(round(course.get('gpato4'), 2)) if course.get('gpa') != 4.0 else ''
         course['ratio'] = str(course.get('ratio')) if course.get('gpa') != 4.0 else ''
+        course['gpa'] = str(round(course.get('gpa'), 2))
 
     return render_template('grade_analyze.html',
                            total_gpa=total_gpa,
