@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>final_exam_time</title>
+
+    <link href="../static/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <ol class="breadcrumb">
+        <li><a href="{{ url_for('index_page') }}">Home</a></li>
+        <li class="active">final_exam_time</li>
+    </ol>
+    <div class="jumbotron">
+        <p>期末考试时间预测</p>
+        <p><strong>仅供参考</strong></p>
+        <p>
+            下面给出的考试时间仅供参考，请不要做为买票回家的依据<br>
+            以前曾发生过的事情（不是用老夫这个站查的，但是是用和这个站用的一样的原理查的，也就是全校开课查询查到的结果本站只不过是自动查询和汇总）
+            <a href="http://bbs.uestc.edu.cn/forum.php?mod=viewthread&tid=1579317" target="_blank">传送门</a><br>
+            使用以下给出的时间，出了问题本站不负责的喵_(:зゝ∠)_<br>
+        </p>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>课程名称</th>
+            <th>考试周数</th>
+            <th>考试开始时间</th>
+            <th>考试结束时间</th>
+        </tr>
+        </thead>
+        {% if final_exam_time_list %}
+            <tbody>
+            {% for course in final_exam_time_list %}
+                <tr>
+                    <td>{{ course['courseName'] }}</td>
+                    <td>{{ course['examWeek'] }}</td>
+                    <td>{{ course['examBegin'] }}</td>
+                    <td>{{ course['examEnd'] }}</td>
+                </tr>
+            {% endfor %}
+
+
+            </tbody>
+        {% endif %}
+    </table>
+
+</div>
+
+<script src="../static/js/jquery-3.2.0.js"></script>
+<script src="../static/js/bootstrap.js"></script>
+</body>
+</html>
