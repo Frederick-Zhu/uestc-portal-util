@@ -14,7 +14,8 @@ from server import app
 def need_login(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if session.has_key('username') and session.has_key('password'):
+        if 'username' in session and 'password' in session:
+        # if session.has_key('username') and session.has_key('password'):
             try:
                 g.portal = portal_tools.PortalUtil(username=session.get('username'),
                                                    password=session.get('password'))  # type: portal_tools.PortalUtil
@@ -29,7 +30,8 @@ def need_login(func):
 
 @app.route('/')
 def index_page():
-    if session.has_key('username') and session.has_key('password'):
+    if 'username' in session and 'password' in session:
+    # if session.has_key('username') and session.has_key('password'):
         return render_template('index.html', login_vaild=True)
     else:
         return render_template('index.html', login_vaild=False)
@@ -39,7 +41,8 @@ def index_page():
 def login():
     form_data = request.form  # type: werkzeug.datastructures.ImmutableMultiDict
 
-    if not form_data.has_key('username') or not form_data.has_key('password'):
+    if not ('username' in form_data) or not ('password' in form_data):
+    # if not form_data.has_key('username') or not form_data.has_key('password'):
         flash('Form data ERROR!', 'danger')
         return redirect(url_for('index_page'))
 

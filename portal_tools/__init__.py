@@ -30,7 +30,7 @@ class _IdasSession(Session):
                                     params={'username': str(username)})
 
         # 如果需要则报错
-        if 'true' in get_need_captcha.content:
+        if 'true' in str(get_need_captcha.content):
             raise errors.IdasNeedCaptcha
 
         # 获得登陆表格
@@ -48,8 +48,10 @@ class _IdasSession(Session):
             login_form_data[item.get('name')] = item.get('value')
 
         # 写入用户名和密码
-        login_form_data[u'username'] = unicode(username)
-        login_form_data[u'password'] = unicode(password)
+        login_form_data[u'username'] = username
+        login_form_data[u'password'] = password
+        # login_form_data[u'username'] = unicode(username)
+        # login_form_data[u'password'] = unicode(password)
 
         # 发送登陆表格
         post_login_from = self.post(
@@ -67,7 +69,8 @@ class _IdasSession(Session):
                 timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
                 json=None):
 
-        if isinstance(headers, types.NoneType):
+        if isinstance(headers, type(None)):
+        # if isinstance(headers, types.NoneType):
             headers = dict()
 
         headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/5' \
@@ -138,8 +141,8 @@ class PortalUtil(object):
 
     def getCourseTable(self, semester_id):
         # type: (int) -> List[Dict[str, str]]
-        _idsPattern = ur'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\.addInput\(form,"ids","(\d+)' \
-                      ur'"\);\s*}else{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
+        _idsPattern = r'if\(jQuery\("#courseTableType"\)\.val\(\)=="std"\){\s*bg\.form\.addInput\(form,"ids","\(\d+\)' \
+                      r'"\);\s*}else{\s*bg\.form\.addInput\(form,"ids","(\d+)"\);\s*}'
 
         get_course_table_for_std = self.session.get('http://eams.uestc.edu.cn/eams/courseTableForStd.action')
 
@@ -239,12 +242,12 @@ class PortalUtil(object):
 
         for course in course_table_list:
             if course['sn'] in grade_dict.keys():
-                print course['name'], grade_dict[course['sn']]
+                print(course['name'], grade_dict[course['sn']])
 
     def getCourseFinalExamTime(self, semester_id, course_id):
         # type: (int, str) -> Optional[Dict[str, Union[str, int, arrow.Arrow]]]
-        finalExamTimePattern = ur'第(\d+)周\s星期[一二三四五六日]\((\d{4})(\d{2})(\d{2})\)\s(\d{2}):(\d{2})-(\d{2}):(\d' \
-                               ur'{2})'
+        finalExamTimePattern = r'第(\d+)周\s星期[一二三四五六日]\((\d{4})(\d{2})(\d{2})\)\s(\d{2}):(\d{2})-(\d{2}):(\d' \
+                               r'{2})'
         post_public_search_data = {'lesson.project.id': '1',
                                    'lesson.no': str(course_id),
                                    'lesson.course.name': '',
